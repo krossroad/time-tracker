@@ -1,8 +1,8 @@
-# Weekly Tracker - Project Documentation
+# Time Tracker - Project Documentation
 
 ## Project Overview
 
-Weekly Tracker is a macOS menu bar application that helps users track their time by periodically prompting them to categorize their activities. The app runs in the background, shows a prompt at configurable intervals, and provides calendar views with daily summaries and timelines.
+Time Tracker is a macOS menu bar application that helps users track their time by periodically prompting them to categorize their activities. The app runs in the background, shows a prompt at configurable intervals, and provides calendar views with daily summaries and timelines.
 
 **Purpose:** Enable users to understand how they spend their time throughout the workday by categorizing activities into predefined buckets (deep work, meetings, email, admin, breaks, personal, away).
 
@@ -33,7 +33,7 @@ Weekly Tracker is a macOS menu bar application that helps users track their time
 ## Project Structure
 
 ```
-weekly-tracker/
+time-tracker/
 ├── src/                          # Frontend React/TypeScript code
 │   ├── components/              # React components
 │   │   ├── calendar/           # Calendar view components
@@ -92,7 +92,7 @@ npm run preview      # Preview production build locally
 
 ## Database
 
-- **Location:** `~/Library/Application Support/com.weeklytracker.tracker/weekly_tracker.db`
+- **Location:** `~/Library/Application Support/com.timetracker.app/time_tracker.db`
 - **Tables:** `time_entries`, `missed_prompts`, `settings`
 - **Migrations:** Auto-run on app startup (src-tauri/src/db/migrations.rs:8)
 
