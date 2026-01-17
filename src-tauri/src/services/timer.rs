@@ -22,7 +22,8 @@ pub async fn start_timer(
     // Calculate time until next aligned interval
     let now = Local::now();
     let minutes = now.minute();
-    let minutes_until_next = (interval_minutes as u32 - (minutes % interval_minutes as u32)) % interval_minutes as u32;
+    let minutes_until_next =
+        (interval_minutes as u32 - (minutes % interval_minutes as u32)) % interval_minutes as u32;
     if minutes_until_next > 0 {
         tokio::time::sleep(TokioDuration::from_secs((minutes_until_next * 60) as u64)).await;
     }
@@ -99,7 +100,7 @@ pub async fn start_timer(
                             .notification()
                             .builder()
                             .title("Time Tracker")
-                            .body("What are you working on?")
+                            .body("What you worked in last session?")
                             .show();
 
                         // Play sound using afplay on macOS (notify_rust sound support is limited)
