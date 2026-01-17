@@ -131,7 +131,7 @@ export function SettingsPanel() {
       </div>
 
       <div className="settings-footer">
-        <p className="app-info">Weekly Tracker v0.1.0</p>
+        <p className="app-info">Time Tracker v0.1.0</p>
       </div>
     </div>
   );

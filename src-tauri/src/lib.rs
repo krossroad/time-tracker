@@ -33,7 +33,7 @@ pub fn run() {
 
             // Create tray menu
             let open_item =
-                MenuItem::with_id(app, "open", "Open Weekly Tracker", true, None::<&str>)?;
+                MenuItem::with_id(app, "open", "Open Time Tracker", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open_item, &quit_item])?;
 

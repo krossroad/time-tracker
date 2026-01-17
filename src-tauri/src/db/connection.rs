@@ -27,6 +27,6 @@ fn get_db_path() -> PathBuf {
     PathBuf::from(home)
         .join("Library")
         .join("Application Support")
-        .join("com.weeklytracker.tracker")
-        .join("weekly_tracker.db")
+        .join("com.timetracker.app")
+        .join("time_tracker.db")
 }

@@ -70,7 +70,7 @@ export function ExportButton() {
       const csvContent = await exportEntriesToCsv(start, end);
 
       const rangeLabel = EXPORT_DATE_RANGES.find((r) => r.value === range)?.label || range;
-      const defaultFileName = `weekly-tracker-${rangeLabel.toLowerCase().replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      const defaultFileName = `time-tracker-${rangeLabel.toLowerCase().replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.csv`;
 
       const filePath = await save({
         defaultPath: defaultFileName,

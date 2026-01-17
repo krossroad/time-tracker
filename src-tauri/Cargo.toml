@@ -1,12 +1,12 @@
 [package]
-name = "weekly-tracker"
+name = "time-tracker"
 version = "0.1.0"
 description = "A macOS menu bar time-tracker app"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "weekly_tracker_lib"
+name = "time_tracker_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

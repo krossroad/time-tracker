@@ -1,6 +1,6 @@
 # Architectural Patterns & Design Decisions
 
-This document outlines recurring patterns and conventions used throughout the Weekly Tracker codebase.
+This document outlines recurring patterns and conventions used throughout the Time Tracker codebase.
 
 ## Frontend-Backend Communication Pattern
 

@@ -39,7 +39,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Weekly Tracker</h1>
+        <h1>Time Tracker</h1>
         <nav className="app-nav">
           <button
             className={currentView === "calendar" ? "active" : ""}
