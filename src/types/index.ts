@@ -42,6 +42,15 @@ export const CATEGORIES: { value: Category; label: string; color: string }[] = [
 
 export type ViewMode = "summary" | "timeline";
 
+export type ExportDateRange = "this_week" | "last_7_days" | "last_30_days" | "all_time";
+
+export const EXPORT_DATE_RANGES: { value: ExportDateRange; label: string }[] = [
+  { value: "this_week", label: "This Week" },
+  { value: "last_7_days", label: "Last 7 Days" },
+  { value: "last_30_days", label: "Last 30 Days" },
+  { value: "all_time", label: "All Time" },
+];
+
 export interface AppState {
   currentView: "prompt" | "calendar" | "settings";
   selectedDate: Date;

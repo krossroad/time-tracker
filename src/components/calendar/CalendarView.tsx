@@ -4,6 +4,7 @@ import { useAppStore } from "../../stores/appStore";
 import { DaySummary } from "./DaySummary";
 import { DayTimeline } from "./DayTimeline";
 import { MissedPromptsPanel } from "../tracker/MissedPromptsPanel";
+import { ExportButton } from "./ExportButton";
 
 export function CalendarView() {
   const {
@@ -54,19 +55,22 @@ export function CalendarView() {
           </button>
         </div>
 
-        <div className="view-toggle">
-          <button
-            className={`toggle-btn ${viewMode === "summary" ? "active" : ""}`}
-            onClick={() => setViewMode("summary")}
-          >
-            Summary
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === "timeline" ? "active" : ""}`}
-            onClick={() => setViewMode("timeline")}
-          >
-            Timeline
-          </button>
+        <div className="header-actions">
+          <div className="view-toggle">
+            <button
+              className={`toggle-btn ${viewMode === "summary" ? "active" : ""}`}
+              onClick={() => setViewMode("summary")}
+            >
+              Summary
+            </button>
+            <button
+              className={`toggle-btn ${viewMode === "timeline" ? "active" : ""}`}
+              onClick={() => setViewMode("timeline")}
+            >
+              Timeline
+            </button>
+          </div>
+          <ExportButton />
         </div>
       </div>
 

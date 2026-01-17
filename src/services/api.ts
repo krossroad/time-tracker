@@ -82,3 +82,13 @@ export async function getAllSettings(): Promise<Setting[]> {
 export async function testNotification(sound: string): Promise<void> {
   return invoke("test_notification", { sound });
 }
+
+export async function exportEntriesToCsv(
+  startTimestamp: number,
+  endTimestamp: number
+): Promise<string> {
+  return invoke<string>("export_entries_to_csv", {
+    startTimestamp,
+    endTimestamp,
+  });
+}
