@@ -1,4 +1,4 @@
-use crate::db::Database;
+use crate::db::{Database, SettingsRepository, TimeEntryRepository};
 use crate::services::idle_detector;
 use chrono::{Local, Timelike};
 use tauri::{AppHandle, Emitter, Manager};
@@ -34,37 +34,17 @@ pub async fn start_timer(
         tokio::select! {
             _ = timer.tick() => {
                 let db = app_handle.state::<Database>();
-                let conn = db.conn.lock().unwrap();
 
-                // Get settings
-                let idle_threshold: u32 = conn
-                    .query_row(
-                        "SELECT value FROM settings WHERE key = 'idle_threshold_minutes'",
-                        [],
-                        |row| row.get::<_, String>(0),
+                // Get settings using repository
+                let (idle_threshold, notification_enabled, notification_sound) = {
+                    let conn = db.conn.lock().unwrap();
+                    let settings_repo = SettingsRepository::new(conn);
+                    (
+                        settings_repo.get_idle_threshold_minutes(),
+                        settings_repo.is_notification_enabled(),
+                        settings_repo.get_notification_sound(),
                     )
-                    .unwrap_or_else(|_| "5".to_string())
-                    .parse()
-                    .unwrap_or(5);
-
-                let notification_enabled = conn
-                    .query_row(
-                        "SELECT value FROM settings WHERE key = 'notification_enabled'",
-                        [],
-                        |row| row.get::<_, String>(0),
-                    )
-                    .unwrap_or_else(|_| "true".to_string())
-                    == "true";
-
-                let notification_sound = conn
-                    .query_row(
-                        "SELECT value FROM settings WHERE key = 'notification_sound'",
-                        [],
-                        |row| row.get::<_, String>(0),
-                    )
-                    .unwrap_or_else(|_| "default".to_string());
-
-                drop(conn);
+                };
 
                 let is_idle = idle_detector::is_user_idle(idle_threshold);
                 let now = Local::now().timestamp();
@@ -75,12 +55,10 @@ pub async fn start_timer(
                     if idle_start.is_none() {
                         idle_start = Some(aligned_timestamp);
                     }
-                    // Auto-create away entry
+                    // Auto-create away entry using repository
                     let conn = db.conn.lock().unwrap();
-                    let _ = conn.execute(
-                        "INSERT INTO time_entries (timestamp, category, duration_minutes, is_away) VALUES (?1, 'away', ?2, 1)",
-                        (aligned_timestamp, interval_minutes as i32),
-                    );
+                    let time_entry_repo = TimeEntryRepository::new(conn);
+                    let _ = time_entry_repo.create_away_entry(aligned_timestamp, interval_minutes as i32);
                 } else {
                     // User is active
                     if let Some(away_start) = idle_start {

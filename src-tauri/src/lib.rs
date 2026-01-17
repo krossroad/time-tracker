@@ -1,8 +1,17 @@
+/// The `tx` variable is a `tokio::sync::mpsc::Sender<TimerCommand>` channel sender,
+/// created to allow sending timer commands to a background timer task.
+/// It is managed by the Tauri application state via `app.manage(tx);`,
+/// making it accessible to other parts of the application (such as command handlers)
+/// that may need to communicate with the timer service.
+/// The corresponding receiver (`rx`) is moved into the background timer task,
+/// which listens for incoming commands and acts accordingly.
+///
+/// In summary, `tx` is used to send commands to the background timer task from elsewhere in the app.
 mod commands;
 mod db;
 mod services;
 
-use db::{migrations, Database};
+use db::{migrations, Database, SettingsRepository};
 use services::TimerCommand;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -88,18 +97,12 @@ pub fn run() {
             let (tx, rx) = mpsc::channel::<TimerCommand>(10);
             app.manage(tx);
 
-            // Get interval from settings
+            // Get interval from settings using repository
             let db = app.state::<Database>();
             let interval: u64 = {
                 let conn = db.conn.lock().unwrap();
-                conn.query_row(
-                    "SELECT value FROM settings WHERE key = 'interval_minutes'",
-                    [],
-                    |row| row.get::<_, String>(0),
-                )
-                .unwrap_or_else(|_| "15".to_string())
-                .parse()
-                .unwrap_or(15)
+                let settings_repo = SettingsRepository::new(conn);
+                settings_repo.get_interval_minutes()
             };
 
             tauri::async_runtime::spawn(async move {

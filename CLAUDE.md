@@ -50,7 +50,13 @@ time-tracker/
 │   │   ├── db/                 # Database layer
 │   │   │   ├── connection.rs   # DB initialization and path setup
 │   │   │   ├── migrations.rs   # Schema migrations
-│   │   │   └── models.rs       # Data models and enums
+│   │   │   ├── models.rs       # Data models and enums
+│   │   │   └── repositories/   # Repository pattern for data access
+│   │   │       ├── mod.rs      # Exports and helper functions
+│   │   │       ├── error.rs    # RepositoryError enum
+│   │   │       ├── time_entry.rs    # TimeEntryRepository
+│   │   │       ├── missed_prompt.rs # MissedPromptRepository
+│   │   │       └── settings.rs      # SettingsRepository
 │   │   ├── services/           # Background services
 │   │   │   ├── idle_detector.rs # System idle detection
 │   │   │   └── timer.rs        # Interval timer and prompt logic
@@ -68,7 +74,8 @@ time-tracker/
 - **`src/stores/`** - Zustand store with actions for data fetching and state updates
 - **`src/services/`** - Frontend API layer wrapping Tauri `invoke()` calls
 - **`src-tauri/src/commands/`** - Backend command handlers exposed to frontend
-- **`src-tauri/src/db/`** - Database abstraction with models and migrations
+- **`src-tauri/src/db/`** - Database abstraction with models, migrations, and repositories
+- **`src-tauri/src/db/repositories/`** - Repository pattern for centralized data access
 - **`src-tauri/src/services/`** - Background services (timer, idle detection)
 
 ## Essential Commands
@@ -138,9 +145,12 @@ For detailed patterns and conventions, see:
 |---------|--------------|
 | App initialization | src-tauri/src/lib.rs:15 |
 | Tray icon setup | src-tauri/src/lib.rs:32-69 |
-| Timer service | src-tauri/src/services/timer.rs:13 |
+| Timer service | src-tauri/src/services/timer.rs:14 |
 | Time entry commands | src-tauri/src/commands/time_entry.rs |
 | Database connection | src-tauri/src/db/connection.rs:10 |
+| TimeEntryRepository | src-tauri/src/db/repositories/time_entry.rs |
+| SettingsRepository | src-tauri/src/db/repositories/settings.rs |
+| MissedPromptRepository | src-tauri/src/db/repositories/missed_prompt.rs |
 | Type definitions | src/types/index.ts |
 | Global state store | src/stores/appStore.ts:41 |
 | Main view router | src/App.tsx:39-64 |
