@@ -83,13 +83,96 @@ SQLite connection wrapped in Mutex for safe concurrent access.
 - Database struct holds `Mutex<Connection>` - src-tauri/src/db/connection.rs:5-22
 - Commands acquire lock with `.lock().map_err()`
 - Lock automatically released when guard goes out of scope
-
-**Example usage:** src-tauri/src/commands/time_entry.rs:14
+- Repositories take ownership of MutexGuard for their lifetime
 
 **Why this pattern:**
 - SQLite doesn't support concurrent writes
 - Mutex ensures only one command accesses DB at a time
 - Tauri's async runtime requires Send/Sync types
+
+## Repository Pattern
+
+### Centralized Data Access Layer
+All database operations are encapsulated in repository structs, separating data access from business logic.
+
+**Repository Structure:**
+```
+src-tauri/src/db/repositories/
+├── mod.rs           # Exports, helper functions (int_to_bool, bool_to_int)
+├── error.rs         # RepositoryError enum
+├── time_entry.rs    # TimeEntryRepository
+├── missed_prompt.rs # MissedPromptRepository
+└── settings.rs      # SettingsRepository
+```
+
+**Pattern:**
+```rust
+// Repository takes ownership of MutexGuard
+pub struct TimeEntryRepository<'a> {
+    conn: MutexGuard<'a, Connection>,
+}
+
+impl<'a> TimeEntryRepository<'a> {
+    pub fn new(conn: MutexGuard<'a, Connection>) -> Self;
+    pub fn create(...) -> Result<i64>;
+    pub fn find_by_date_range(start: i64, end: i64) -> Result<Vec<TimeEntry>>;
+    // ...
+}
+```
+
+**Usage in Commands:**
+```rust
+#[tauri::command]
+pub fn get_entries_for_date(db: State<'_, Database>, ...) -> Result<Vec<TimeEntry>, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = TimeEntryRepository::new(conn);
+    repo.find_by_date_range(start, end).map_err(Into::into)
+}
+```
+
+**Available Repositories:**
+
+| Repository | Key Methods |
+|------------|-------------|
+| `TimeEntryRepository` | `create`, `create_away_entry`, `find_by_date_range`, `find_raw_by_date_range`, `update_category`, `update_notes`, `delete` |
+| `MissedPromptRepository` | `create`, `find_by_date_range`, `delete_by_timestamp` |
+| `SettingsRepository` | `get`, `set`, `get_all`, `get_interval_minutes`, `get_idle_threshold_minutes`, `is_notification_enabled`, `get_notification_sound` |
+
+**Typed Settings Getters:**
+SettingsRepository provides typed convenience methods that handle parsing and defaults:
+- `get_interval_minutes() -> u64` (default: 15)
+- `get_idle_threshold_minutes() -> u32` (default: 5)
+- `is_notification_enabled() -> bool` (default: true)
+- `get_notification_sound() -> String` (default: "default")
+
+**Helper Functions (mod.rs):**
+- `int_to_bool(val: i32) -> bool` - Convert SQLite integer to bool
+- `bool_to_int(val: bool) -> i32` - Convert bool to SQLite integer
+
+**Error Handling:**
+```rust
+pub enum RepositoryError {
+    DatabaseError(rusqlite::Error),
+    LockError(String),
+    NotFound(String),
+    InvalidData(String),
+}
+// Implements From<RepositoryError> for String for command compatibility
+```
+
+**Benefits:**
+- Centralized SQL queries in one location per entity
+- Eliminates duplicated row mapping code
+- Type-safe settings access with defaults
+- Consistent error handling across all data operations
+- Commands focus on business logic, not SQL
+- Easier testing (can mock repositories)
+
+**References:**
+- TimeEntryRepository: src-tauri/src/db/repositories/time_entry.rs
+- SettingsRepository: src-tauri/src/db/repositories/settings.rs
+- Usage in commands: src-tauri/src/commands/time_entry.rs:14-15
+- Usage in services: src-tauri/src/services/timer.rs:39-46
 
 ## Component Composition Pattern
 
