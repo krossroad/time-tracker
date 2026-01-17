@@ -78,3 +78,7 @@ export async function setSetting(key: string, value: string): Promise<void> {
 export async function getAllSettings(): Promise<Setting[]> {
   return invoke<Setting[]>("get_all_settings");
 }
+
+export async function testNotification(sound: string): Promise<void> {
+  return invoke("test_notification", { sound });
+}
