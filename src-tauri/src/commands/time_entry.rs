@@ -1,4 +1,4 @@
-use crate::db::{Database, TimeEntry, MissedPrompt};
+use crate::db::{Database, MissedPrompt, MissedPromptRepository, TimeEntry, TimeEntryRepository};
 use tauri::State;
 
 #[tauri::command]
@@ -12,22 +12,17 @@ pub fn create_time_entry(
     notes: Option<String>,
 ) -> Result<i64, String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = TimeEntryRepository::new(conn);
 
-    conn.execute(
-        "INSERT INTO time_entries (timestamp, category, duration_minutes, is_away, is_retroactive, notes)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        (
-            timestamp,
-            &category,
-            duration_minutes.unwrap_or(15),
-            is_away.unwrap_or(false) as i32,
-            is_retroactive.unwrap_or(false) as i32,
-            &notes,
-        ),
+    repo.create(
+        timestamp,
+        &category,
+        duration_minutes.unwrap_or(15),
+        is_away.unwrap_or(false),
+        is_retroactive.unwrap_or(false),
+        notes.as_deref(),
     )
-    .map_err(|e| e.to_string())?;
-
-    Ok(conn.last_insert_rowid())
+    .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -37,34 +32,10 @@ pub fn get_entries_for_date(
     end_timestamp: i64,
 ) -> Result<Vec<TimeEntry>, String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = TimeEntryRepository::new(conn);
 
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, timestamp, category, duration_minutes, is_away, is_retroactive, notes, created_at
-             FROM time_entries
-             WHERE timestamp >= ?1 AND timestamp < ?2
-             ORDER BY timestamp ASC",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let entries = stmt
-        .query_map([start_timestamp, end_timestamp], |row| {
-            Ok(TimeEntry {
-                id: row.get(0)?,
-                timestamp: row.get(1)?,
-                category: row.get(2)?,
-                duration_minutes: row.get(3)?,
-                is_away: row.get::<_, i32>(4)? != 0,
-                is_retroactive: row.get::<_, i32>(5)? != 0,
-                notes: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
-
-    Ok(entries)
+    repo.find_by_date_range(start_timestamp, end_timestamp)
+        .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -75,21 +46,14 @@ pub fn update_time_entry(
     notes: Option<String>,
 ) -> Result<(), String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = TimeEntryRepository::new(conn);
 
     if let Some(cat) = category {
-        conn.execute(
-            "UPDATE time_entries SET category = ?1 WHERE id = ?2",
-            (&cat, id),
-        )
-        .map_err(|e| e.to_string())?;
+        repo.update_category(id, &cat).map_err(|e| e.to_string())?;
     }
 
     if let Some(n) = notes {
-        conn.execute(
-            "UPDATE time_entries SET notes = ?1 WHERE id = ?2",
-            (&n, id),
-        )
-        .map_err(|e| e.to_string())?;
+        repo.update_notes(id, &n).map_err(|e| e.to_string())?;
     }
 
     Ok(())
@@ -98,11 +62,9 @@ pub fn update_time_entry(
 #[tauri::command]
 pub fn delete_time_entry(db: State<'_, Database>, id: i64) -> Result<(), String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = TimeEntryRepository::new(conn);
 
-    conn.execute("DELETE FROM time_entries WHERE id = ?1", [id])
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
+    repo.delete(id).map_err(Into::into)
 }
 
 #[tauri::command]
@@ -112,14 +74,9 @@ pub fn create_missed_prompt(
     reason: Option<String>,
 ) -> Result<i64, String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = MissedPromptRepository::new(conn);
 
-    conn.execute(
-        "INSERT OR IGNORE INTO missed_prompts (timestamp, reason) VALUES (?1, ?2)",
-        (timestamp, &reason),
-    )
-    .map_err(|e| e.to_string())?;
-
-    Ok(conn.last_insert_rowid())
+    repo.create(timestamp, reason.as_deref()).map_err(Into::into)
 }
 
 #[tauri::command]
@@ -129,38 +86,16 @@ pub fn get_missed_prompts(
     end_timestamp: i64,
 ) -> Result<Vec<MissedPrompt>, String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = MissedPromptRepository::new(conn);
 
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, timestamp, reason, created_at
-             FROM missed_prompts
-             WHERE timestamp >= ?1 AND timestamp < ?2
-             ORDER BY timestamp ASC",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let prompts = stmt
-        .query_map([start_timestamp, end_timestamp], |row| {
-            Ok(MissedPrompt {
-                id: row.get(0)?,
-                timestamp: row.get(1)?,
-                reason: row.get(2)?,
-                created_at: row.get(3)?,
-            })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
-
-    Ok(prompts)
+    repo.find_by_date_range(start_timestamp, end_timestamp)
+        .map_err(Into::into)
 }
 
 #[tauri::command]
 pub fn delete_missed_prompt(db: State<'_, Database>, timestamp: i64) -> Result<(), String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let repo = MissedPromptRepository::new(conn);
 
-    conn.execute("DELETE FROM missed_prompts WHERE timestamp = ?1", [timestamp])
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
+    repo.delete_by_timestamp(timestamp).map_err(Into::into)
 }
