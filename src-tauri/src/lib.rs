@@ -16,6 +16,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // Set as menu bar app (no dock icon) on macOS
             #[cfg(target_os = "macos")]
@@ -118,6 +120,7 @@ pub fn run() {
             commands::set_setting,
             commands::get_all_settings,
             commands::test_notification,
+            commands::export_entries_to_csv,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
