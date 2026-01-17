@@ -488,6 +488,34 @@ body {
   color: #9ca3af;
 }
 
+.sound-select-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sound-select-row select {
+  flex: 1;
+}
+
+.test-sound-btn {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.test-sound-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.test-sound-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .settings-footer {
   padding-top: 20px;
   border-top: 1px solid #e5e7eb;

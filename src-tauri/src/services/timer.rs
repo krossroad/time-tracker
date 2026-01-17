@@ -95,18 +95,31 @@ pub async fn start_timer(
 
                     // Send notification if enabled
                     if notification_enabled {
-                        let mut notification = app_handle
+                        let _ = app_handle
                             .notification()
                             .builder()
                             .title("Time Tracker")
-                            .body("What are you working on?");
+                            .body("What are you working on?")
+                            .show();
 
-                        // Set sound based on user preference
-                        if notification_sound != "default" {
-                            notification = notification.sound(&notification_sound);
+                        // Play sound using afplay on macOS (notify_rust sound support is limited)
+                        #[cfg(target_os = "macos")]
+                        {
+                            let sound_name = if notification_sound == "default" {
+                                "Ping".to_string()
+                            } else {
+                                // Capitalize first letter to match macOS sound file names
+                                let mut chars = notification_sound.chars();
+                                match chars.next() {
+                                    Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                                    None => notification_sound.clone(),
+                                }
+                            };
+                            let sound_path = format!("/System/Library/Sounds/{}.aiff", sound_name);
+                            let _ = std::process::Command::new("afplay")
+                                .arg(&sound_path)
+                                .spawn();
                         }
-
-                        let _ = notification.show();
                     }
 
                     // Emit prompt event

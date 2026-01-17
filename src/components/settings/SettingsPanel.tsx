@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAppStore } from "../../stores/appStore";
+import { testNotification } from "../../services/api";
 
 export function SettingsPanel() {
   const { settings, loadSettings, updateSetting, setCurrentView } = useAppStore();
@@ -27,6 +28,10 @@ export function SettingsPanel() {
 
   const handleNotificationSoundChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     updateSetting("notification_sound", e.target.value);
+  };
+
+  const handleTestNotification = () => {
+    testNotification(notificationSound);
   };
 
   return (
@@ -93,23 +98,32 @@ export function SettingsPanel() {
 
         <div className="setting-item">
           <label htmlFor="notification-sound">Notification Sound</label>
-          <select
-            id="notification-sound"
-            value={notificationSound}
-            onChange={handleNotificationSoundChange}
-            disabled={!notificationEnabled}
-          >
-            <option value="default">Default</option>
-            <option value="glass">Glass</option>
-            <option value="hero">Hero</option>
-            <option value="morse">Morse</option>
-            <option value="ping">Ping</option>
-            <option value="pop">Pop</option>
-            <option value="purr">Purr</option>
-            <option value="sosumi">Sosumi</option>
-            <option value="submarine">Submarine</option>
-            <option value="tink">Tink</option>
-          </select>
+          <div className="sound-select-row">
+            <select
+              id="notification-sound"
+              value={notificationSound}
+              onChange={handleNotificationSoundChange}
+              disabled={!notificationEnabled}
+            >
+              <option value="default">Default</option>
+              <option value="glass">Glass</option>
+              <option value="hero">Hero</option>
+              <option value="morse">Morse</option>
+              <option value="ping">Ping</option>
+              <option value="pop">Pop</option>
+              <option value="purr">Purr</option>
+              <option value="sosumi">Sosumi</option>
+              <option value="submarine">Submarine</option>
+              <option value="tink">Tink</option>
+            </select>
+            <button
+              className="test-sound-btn"
+              onClick={handleTestNotification}
+              disabled={!notificationEnabled}
+            >
+              Test
+            </button>
+          </div>
           <p className="setting-description">
             Sound to play with notifications (macOS sounds)
           </p>
