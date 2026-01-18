@@ -6,7 +6,7 @@ import { Category } from "../../types";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function PromptDialog() {
-  const { pendingTimestamp, createEntry, setCurrentView } = useAppStore();
+  const { pendingTimestamp, createEntry, setCurrentView, settings } = useAppStore();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
@@ -41,14 +41,19 @@ export function PromptDialog() {
     }
   };
 
-  const formattedTime = pendingTimestamp
+  const intervalMinutes = parseInt(settings.interval_minutes || "15", 10);
+  const intervalStart = pendingTimestamp
     ? format(new Date(pendingTimestamp * 1000), "h:mm a")
     : "";
+  const intervalEnd = pendingTimestamp
+    ? format(new Date((pendingTimestamp + intervalMinutes * 60) * 1000), "h:mm a")
+    : "";
+  const formattedInterval = pendingTimestamp ? `${intervalStart} - ${intervalEnd}` : "";
 
   return (
     <div className="prompt-dialog">
-      <h2>What are you working on?</h2>
-      <p className="prompt-time">{formattedTime}</p>
+      <h2>What did you work on?</h2>
+      <p className="prompt-time">{formattedInterval}</p>
 
       <CategorySelector
         selectedCategory={selectedCategory}
