@@ -69,11 +69,19 @@ pub async fn start_timer(
 
                     // Send notification if enabled
                     if notification_enabled {
+                        let interval_start = chrono::DateTime::from_timestamp(aligned_timestamp, 0)
+                            .map(|dt| dt.with_timezone(&Local).format("%-I:%M %p").to_string())
+                            .unwrap_or_default();
+                        let interval_end = chrono::DateTime::from_timestamp(aligned_timestamp + (interval_minutes as i64 * 60), 0)
+                            .map(|dt| dt.with_timezone(&Local).format("%-I:%M %p").to_string())
+                            .unwrap_or_default();
+                        let notification_body = format!("What did you work on {} - {}?", interval_start, interval_end);
+
                         let _ = app_handle
                             .notification()
                             .builder()
                             .title("Time Tracker")
-                            .body("What you worked in last session?")
+                            .body(&notification_body)
                             .show();
 
                         // Play sound using afplay on macOS (notify_rust sound support is limited)
