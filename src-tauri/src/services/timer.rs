@@ -4,7 +4,7 @@ use chrono::{Local, Timelike};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tokio::sync::mpsc;
-use tokio::time::{interval, Duration as TokioDuration};
+use tokio::time::{interval_at, Duration as TokioDuration, Instant};
 
 pub enum TimerCommand {
     UpdateInterval(u64),
@@ -17,16 +17,11 @@ pub async fn start_timer(
     mut rx: mpsc::Receiver<TimerCommand>,
 ) {
     let mut interval_minutes = initial_interval_minutes;
-    let mut timer = interval(TokioDuration::from_secs(interval_minutes * 60));
 
-    // Calculate time until next aligned interval
-    let now = Local::now();
-    let minutes = now.minute();
-    let minutes_until_next =
-        (interval_minutes as u32 - (minutes % interval_minutes as u32)) % interval_minutes as u32;
-    if minutes_until_next > 0 {
-        tokio::time::sleep(TokioDuration::from_secs((minutes_until_next * 60) as u64)).await;
-    }
+    // Create timer aligned to clock boundaries using interval_at
+    let seconds_until_next = seconds_until_next_boundary(interval_minutes);
+    let start = Instant::now() + TokioDuration::from_secs(seconds_until_next);
+    let mut timer = interval_at(start, TokioDuration::from_secs(interval_minutes * 60));
 
     let mut idle_start: Option<i64> = None;
 
@@ -117,7 +112,10 @@ pub async fn start_timer(
                 match cmd {
                     TimerCommand::UpdateInterval(new_interval) => {
                         interval_minutes = new_interval;
-                        timer = interval(TokioDuration::from_secs(interval_minutes * 60));
+                        // Realign timer to new interval boundaries
+                        let seconds_until_next = seconds_until_next_boundary(interval_minutes);
+                        let start = Instant::now() + TokioDuration::from_secs(seconds_until_next);
+                        timer = interval_at(start, TokioDuration::from_secs(interval_minutes * 60));
                     }
                     TimerCommand::Stop => {
                         break;
@@ -131,4 +129,22 @@ pub async fn start_timer(
 fn align_timestamp(timestamp: i64, interval_minutes: i64) -> i64 {
     let interval_seconds = interval_minutes * 60;
     (timestamp / interval_seconds) * interval_seconds
+}
+
+/// Calculate seconds until the next aligned interval boundary
+fn seconds_until_next_boundary(interval_minutes: u64) -> u64 {
+    let now = Local::now();
+    let minutes = now.minute();
+    let seconds = now.second();
+    let minutes_until_next =
+        (interval_minutes as u32 - (minutes % interval_minutes as u32)) % interval_minutes as u32;
+
+    if minutes_until_next > 0 {
+        (minutes_until_next * 60) as u64 - seconds as u64
+    } else if seconds > 0 {
+        // At the minute mark but seconds > 0, wait until next full interval
+        (interval_minutes * 60) - seconds as u64
+    } else {
+        0
+    }
 }
