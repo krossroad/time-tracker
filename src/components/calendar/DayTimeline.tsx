@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, startOfDay, addMinutes } from "date-fns";
 import { useAppStore } from "../../stores/appStore";
 import { CATEGORIES, TimeEntry } from "../../types";
+import { TimeSlotEditor } from "./TimeSlotEditor";
 
 interface TimeSlot {
   timestamp: number;
@@ -10,6 +11,7 @@ interface TimeSlot {
 
 export function DayTimeline() {
   const { selectedDate, entries } = useAppStore();
+  const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
 
   const timeSlots = useMemo(() => {
     const slots: TimeSlot[] = [];
@@ -48,6 +50,10 @@ export function DayTimeline() {
     return groups;
   }, [timeSlots]);
 
+  const handleSlotClick = (slot: TimeSlot) => {
+    setEditingSlot(slot);
+  };
+
   return (
     <div className="day-timeline">
       {hourGroups.map((group) => (
@@ -59,7 +65,7 @@ export function DayTimeline() {
             {group.slots.map((slot) => (
               <div
                 key={slot.timestamp}
-                className={`quarter-slot ${slot.entry ? "filled" : ""}`}
+                className={`quarter-slot ${slot.entry ? "filled" : ""} clickable`}
                 style={{
                   backgroundColor: slot.entry
                     ? getCategoryColor(slot.entry.category)
@@ -70,11 +76,20 @@ export function DayTimeline() {
                     ? `${CATEGORIES.find((c) => c.value === slot.entry!.category)?.label || slot.entry.category}: ${slot.entry.notes || ""}`
                     : format(new Date(slot.timestamp * 1000), "h:mm a")
                 }
+                onClick={() => handleSlotClick(slot)}
               />
             ))}
           </div>
         </div>
       ))}
+
+      {editingSlot && (
+        <TimeSlotEditor
+          timestamp={editingSlot.timestamp}
+          existingEntry={editingSlot.entry}
+          onClose={() => setEditingSlot(null)}
+        />
+      )}
     </div>
   );
 }
