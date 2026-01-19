@@ -344,6 +344,125 @@ body {
   transform: scaleY(1.2);
 }
 
+.quarter-slot.clickable {
+  cursor: pointer;
+}
+
+.quarter-slot.clickable:hover {
+  opacity: 0.8;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+}
+
+/* Time Slot Editor Modal */
+.time-slot-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.time-slot-editor {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.time-slot-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-slot-editor-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.time-slot-editor .close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  line-height: 1;
+}
+
+.time-slot-editor .close-btn:hover {
+  color: #374151;
+}
+
+.time-slot-interval {
+  font-size: 18px;
+  font-weight: 500;
+  color: #4f46e5;
+  text-align: center;
+  margin: 0;
+}
+
+.current-entry-info {
+  display: flex;
+  justify-content: center;
+}
+
+.current-category-badge {
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.time-slot-editor input {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.time-slot-editor input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.time-slot-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.time-slot-editor-actions .action-spacer {
+  flex: 1;
+}
+
+.btn-danger {
+  padding: 8px 16px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
 /* Missed Prompts */
 .missed-prompts-panel {
   background: #fef3c7;
