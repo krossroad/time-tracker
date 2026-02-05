@@ -49,3 +49,82 @@ impl<'a> MissedPromptRepository<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::{connection::Database, migrations};
+
+    fn setup_db() -> Database {
+        let db = Database::new_in_memory().unwrap();
+        {
+            let conn = db.conn.lock().unwrap();
+            migrations::run_migrations(&conn).unwrap();
+        }
+        db
+    }
+
+    #[test]
+    fn test_create_and_find_by_date_range() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = MissedPromptRepository::new(conn);
+        repo.create(1000, Some("idle")).unwrap();
+
+        let prompts = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(prompts.len(), 1);
+        assert_eq!(prompts[0].timestamp, 1000);
+        assert_eq!(prompts[0].reason.as_deref(), Some("idle"));
+    }
+
+    #[test]
+    fn test_duplicate_timestamp_ignored() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = MissedPromptRepository::new(conn);
+        repo.create(1000, Some("first")).unwrap();
+        repo.create(1000, Some("second")).unwrap();
+
+        let prompts = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(prompts.len(), 1);
+        assert_eq!(prompts[0].reason.as_deref(), Some("first"));
+    }
+
+    #[test]
+    fn test_find_by_date_range_empty() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = MissedPromptRepository::new(conn);
+        let prompts = repo.find_by_date_range(0, 10000).unwrap();
+        assert!(prompts.is_empty());
+    }
+
+    #[test]
+    fn test_delete_by_timestamp() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = MissedPromptRepository::new(conn);
+        repo.create(1000, Some("test")).unwrap();
+
+        repo.delete_by_timestamp(1000).unwrap();
+
+        let prompts = repo.find_by_date_range(0, 2000).unwrap();
+        assert!(prompts.is_empty());
+    }
+
+    #[test]
+    fn test_ordered_by_timestamp() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = MissedPromptRepository::new(conn);
+        repo.create(3000, None).unwrap();
+        repo.create(1000, None).unwrap();
+        repo.create(2000, None).unwrap();
+
+        let prompts = repo.find_by_date_range(0, 5000).unwrap();
+        assert_eq!(prompts.len(), 3);
+        assert_eq!(prompts[0].timestamp, 1000);
+        assert_eq!(prompts[1].timestamp, 2000);
+        assert_eq!(prompts[2].timestamp, 3000);
+    }
+}

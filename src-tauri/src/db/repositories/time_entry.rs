@@ -121,3 +121,155 @@ impl<'a> TimeEntryRepository<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::{connection::Database, migrations};
+
+    fn setup_db() -> Database {
+        let db = Database::new_in_memory().unwrap();
+        {
+            let conn = db.conn.lock().unwrap();
+            migrations::run_migrations(&conn).unwrap();
+        }
+        db
+    }
+
+    #[test]
+    fn test_create_returns_id() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        let id = repo.create(1000, "deep_work", 15, false, false, Some("test")).unwrap();
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_create_and_find_by_date_range() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        repo.create(1000, "deep_work", 15, false, true, Some("coding")).unwrap();
+
+        let entries = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(entries.len(), 1);
+        let e = &entries[0];
+        assert_eq!(e.timestamp, 1000);
+        assert_eq!(e.category, "deep_work");
+        assert_eq!(e.duration_minutes, 15);
+        assert!(!e.is_away);
+        assert!(e.is_retroactive);
+        assert_eq!(e.notes.as_deref(), Some("coding"));
+    }
+
+    #[test]
+    fn test_find_by_date_range_excludes_out_of_range() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        repo.create(500, "admin", 15, false, false, None).unwrap();
+        repo.create(1500, "meetings", 15, false, false, None).unwrap();
+        repo.create(2500, "break", 15, false, false, None).unwrap();
+
+        let entries = repo.find_by_date_range(1000, 2000).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].timestamp, 1500);
+    }
+
+    #[test]
+    fn test_find_by_date_range_empty() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        let entries = repo.find_by_date_range(0, 10000).unwrap();
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn test_create_away_entry() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        repo.create_away_entry(1000, 15).unwrap();
+
+        let entries = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].category, "away");
+        assert!(entries[0].is_away);
+        assert_eq!(entries[0].duration_minutes, 15);
+    }
+
+    #[test]
+    fn test_find_raw_by_date_range() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        repo.create(1000, "deep_work", 15, false, true, Some("raw test")).unwrap();
+
+        let entries = repo.find_raw_by_date_range(0, 2000).unwrap();
+        assert_eq!(entries.len(), 1);
+        let (ts, cat, dur, away, retro, notes) = &entries[0];
+        assert_eq!(*ts, 1000);
+        assert_eq!(cat, "deep_work");
+        assert_eq!(*dur, 15);
+        assert!(!away);
+        assert!(retro);
+        assert_eq!(notes.as_deref(), Some("raw test"));
+    }
+
+    #[test]
+    fn test_update_category() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        let id = repo.create(1000, "deep_work", 15, false, false, None).unwrap();
+
+        repo.update_category(id, "meetings").unwrap();
+
+        let entries = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(entries[0].category, "meetings");
+    }
+
+    #[test]
+    fn test_update_notes() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        let id = repo.create(1000, "deep_work", 15, false, false, None).unwrap();
+
+        repo.update_notes(id, "updated notes").unwrap();
+
+        let entries = repo.find_by_date_range(0, 2000).unwrap();
+        assert_eq!(entries[0].notes.as_deref(), Some("updated notes"));
+    }
+
+    #[test]
+    fn test_delete() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        let id = repo.create(1000, "deep_work", 15, false, false, None).unwrap();
+
+        repo.delete(id).unwrap();
+
+        let entries = repo.find_by_date_range(0, 2000).unwrap();
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn test_multiple_entries_ordered_by_timestamp() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = TimeEntryRepository::new(conn);
+        repo.create(3000, "break", 15, false, false, None).unwrap();
+        repo.create(1000, "deep_work", 15, false, false, None).unwrap();
+        repo.create(2000, "meetings", 15, false, false, None).unwrap();
+
+        let entries = repo.find_by_date_range(0, 5000).unwrap();
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].timestamp, 1000);
+        assert_eq!(entries[1].timestamp, 2000);
+        assert_eq!(entries[2].timestamp, 3000);
+    }
+}

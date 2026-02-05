@@ -77,3 +77,81 @@ impl<'a> SettingsRepository<'a> {
             .unwrap_or_else(|| "default".to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::{connection::Database, migrations};
+
+    fn setup_db() -> Database {
+        let db = Database::new_in_memory().unwrap();
+        {
+            let conn = db.conn.lock().unwrap();
+            migrations::run_migrations(&conn).unwrap();
+        }
+        db
+    }
+
+    #[test]
+    fn test_default_interval_minutes() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        assert_eq!(repo.get_interval_minutes(), 15);
+    }
+
+    #[test]
+    fn test_default_idle_threshold() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        assert_eq!(repo.get_idle_threshold_minutes(), 5);
+    }
+
+    #[test]
+    fn test_default_notification_enabled() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        assert!(repo.is_notification_enabled());
+    }
+
+    #[test]
+    fn test_default_notification_sound() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        assert_eq!(repo.get_notification_sound(), "default");
+    }
+
+    #[test]
+    fn test_set_and_get() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        repo.set("interval_minutes", "30").unwrap();
+        assert_eq!(repo.get("interval_minutes").unwrap(), Some("30".to_string()));
+    }
+
+    #[test]
+    fn test_get_nonexistent_key() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        assert_eq!(repo.get("nonexistent").unwrap(), None);
+    }
+
+    #[test]
+    fn test_get_all_returns_defaults() {
+        let db = setup_db();
+        let conn = db.conn.lock().unwrap();
+        let repo = SettingsRepository::new(conn);
+        let all = repo.get_all().unwrap();
+        assert_eq!(all.len(), 4);
+        let keys: Vec<&str> = all.iter().map(|s| s.key.as_str()).collect();
+        assert!(keys.contains(&"interval_minutes"));
+        assert!(keys.contains(&"idle_threshold_minutes"));
+        assert!(keys.contains(&"notification_enabled"));
+        assert!(keys.contains(&"notification_sound"));
+    }
+}
