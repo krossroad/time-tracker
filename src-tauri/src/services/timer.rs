@@ -156,3 +156,39 @@ fn seconds_until_next_boundary(interval_minutes: u64) -> u64 {
         0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_align_timestamp_on_boundary() {
+        assert_eq!(align_timestamp(900, 15), 900);
+    }
+
+    #[test]
+    fn test_align_timestamp_mid_interval() {
+        assert_eq!(align_timestamp(1000, 15), 900);
+    }
+
+    #[test]
+    fn test_align_timestamp_just_before_boundary() {
+        assert_eq!(align_timestamp(1799, 15), 900);
+    }
+
+    #[test]
+    fn test_align_timestamp_30min_interval() {
+        assert_eq!(align_timestamp(2000, 30), 1800);
+    }
+
+    #[test]
+    fn test_align_timestamp_zero() {
+        assert_eq!(align_timestamp(0, 15), 0);
+    }
+
+    #[test]
+    fn test_seconds_until_next_boundary_range() {
+        let result = seconds_until_next_boundary(15);
+        assert!(result < 15 * 60, "Expected < 900, got {}", result);
+    }
+}

@@ -49,3 +49,33 @@ pub fn export_entries_to_csv(
 
     Ok(csv)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_escape_csv_field_plain() {
+        assert_eq!(escape_csv_field("hello"), "hello");
+    }
+
+    #[test]
+    fn test_escape_csv_field_with_comma() {
+        assert_eq!(escape_csv_field("hello,world"), "\"hello,world\"");
+    }
+
+    #[test]
+    fn test_escape_csv_field_with_quotes() {
+        assert_eq!(escape_csv_field("say \"hi\""), "\"say \"\"hi\"\"\"");
+    }
+
+    #[test]
+    fn test_escape_csv_field_with_newline() {
+        assert_eq!(escape_csv_field("line1\nline2"), "\"line1\nline2\"");
+    }
+
+    #[test]
+    fn test_escape_csv_field_empty() {
+        assert_eq!(escape_csv_field(""), "");
+    }
+}
