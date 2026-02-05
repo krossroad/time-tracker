@@ -30,10 +30,8 @@ pub struct Setting {
 pub enum Category {
     DeepWork,
     Meetings,
-    Email,
     Admin,
     Break,
-    Personal,
     Away,
 }
 
@@ -42,10 +40,8 @@ impl Category {
         match self {
             Category::DeepWork => "deep_work",
             Category::Meetings => "meetings",
-            Category::Email => "email",
             Category::Admin => "admin",
             Category::Break => "break",
-            Category::Personal => "personal",
             Category::Away => "away",
         }
     }
@@ -54,10 +50,8 @@ impl Category {
         match s {
             "deep_work" => Some(Category::DeepWork),
             "meetings" => Some(Category::Meetings),
-            "email" => Some(Category::Email),
             "admin" => Some(Category::Admin),
             "break" => Some(Category::Break),
-            "personal" => Some(Category::Personal),
             "away" => Some(Category::Away),
             _ => None,
         }
