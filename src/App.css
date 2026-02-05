@@ -391,6 +391,27 @@ body {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-slot-editor .edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.time-slot-editor .edit-btn:hover {
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1);
+}
+
 .time-slot-editor .close-btn {
   background: none;
   border: none;
@@ -403,6 +424,38 @@ body {
 
 .time-slot-editor .close-btn:hover {
   color: #374151;
+}
+
+.time-slot-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.view-value {
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.view-empty {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
 }
 
 .time-slot-interval {
