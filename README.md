@@ -32,8 +32,8 @@ A macOS menu bar application that helps you track how you spend your time by per
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/weekly-tracker.git
-cd weekly-tracker
+git clone https://github.com/krossroad/time-tracker.git
+cd time-tracker
 
 # Install dependencies
 npm install
