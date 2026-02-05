@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { format, startOfDay, addMinutes } from "date-fns";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { format, startOfDay, addMinutes, isToday } from "date-fns";
 import { useAppStore } from "../../stores/appStore";
 import { CATEGORIES, TimeEntry } from "../../types";
 import { TimeSlotEditor } from "./TimeSlotEditor";
@@ -50,6 +50,31 @@ export function DayTimeline() {
     return groups;
   }, [timeSlots]);
 
+  const currentHourRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToCurrentHour = () => {
+    if (currentHourRef.current && isToday(selectedDate)) {
+      currentHourRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  useEffect(() => {
+    scrollToCurrentHour();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        scrollToCurrentHour();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
+    };
+  }, [selectedDate]);
+
   const handleSlotClick = (slot: TimeSlot) => {
     setEditingSlot(slot);
   };
@@ -57,7 +82,11 @@ export function DayTimeline() {
   return (
     <div className="day-timeline">
       {hourGroups.map((group) => (
-        <div key={group.hour} className="hour-row">
+        <div
+          key={group.hour}
+          className="hour-row"
+          ref={group.hour === new Date().getHours() ? currentHourRef : undefined}
+        >
           <div className="hour-label">
             {format(addMinutes(startOfDay(selectedDate), group.hour * 60), "ha")}
           </div>
